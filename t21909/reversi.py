@@ -34,20 +34,29 @@ class Stone(Enum):
 
 
 class Player(Enum):
-    HUMAN = -1
-    MACHINE = 1
+    HUMAN = 0
+    # VIA_NETWORK = -1
+    AI_RANDUM = 1
+    # AI_MINMAX = 2
+    # AI_ALPHA = 3
+
+    def get_ai(self):
+        if self.name == "AI_RANDUM":
+            return ai_randum.AI()
 
 
 class Position:
     def __init__(self, x=0, y=0):
-        self.y = y
         self.x = x
+        self.y = y
 
 
 class LocaleStr:
     JA_NAMES = {
         Stone.WHITE: "白", Stone.BLACK: "黒",
-        Player.HUMAN: "人間", Player.MACHINE: "コンピュータ"
+        Player.HUMAN: "人間", Player.AI_RANDUM: "コンピュータ(ランダム)",
+        # Player.VIA_NETWORK: "ネット対戦", Player.MINMAX: "(minmax)",
+        "Play_First": "先手●", "Play_Second": "後手○"
     }
 
 
@@ -81,11 +90,11 @@ class Board:
 
     # 黒白の石数をタプルで返す
     def get_discs(self):
-        discs = {1: 0, -1: 0, 0: 0}
+        discs = {Stone.BLACK: 0, Stone.WHITE: 0, Stone.SPACE: 0}
         for y in range(DIM):
             for x in range(DIM):
-                discs[(self.board[y][x]).value] += 1
-        return (discs[1], discs[-1])
+                discs[(self.board[y][x])] += 1
+        return discs
 
     # 指定のマスに石を打てるか？
     def is_movable(self, position):
@@ -169,9 +178,8 @@ class Board:
             return True
 
         # 黒白どちらかの石数が0になった時
-        # 黒白の石数をタプルで取得
-        (black_discs, white_discs) = self.get_discs()
-        if black_discs == 0 or white_discs == 0:
+        discs = self.get_discs()
+        if discs[Stone.BLACK] == 0 or discs[Stone.WHITE] == 0:
             return True
 
         # 黒白どちらも手がない場合
@@ -191,7 +199,7 @@ class Board:
 
 
 class Game:
-    def __init__(self, canvas_board, root, black_var, white_var, mess_var):
+    def __init__(self, canvas_board, root, tk_vers):
         self.game_mode = GameState.STAY
 
         self.black_player = Player.HUMAN
@@ -200,9 +208,7 @@ class Game:
         self.board.init_board()  # 盤面の初期化
         self.canvas_board = canvas_board
         self.root = root
-        self.black_var = black_var
-        self.white_var = white_var
-        self.mess_var = mess_var
+        self.tk_vars = tk_vers
 
     # 対局開始
     def start(self, _black_player, _white_player):
@@ -233,47 +239,49 @@ class Game:
 
         disp_message(self)          # メッセージ表示
 
-    # 次の手番はコンピュータか？
-    def is_machine_turn(self):
-        return (
-            self.board.turn == Stone.BLACK and
-            self.black_player == Player.MACHINE
-        ) or (
-            self.board.turn == Stone.WHITE and
-            self.white_player == Player.MACHINE
-        )
+    def get_turn(self):
+        if self.board.turn == Stone.BLACK:
+            return self.black_player
+        if self.board.turn == Stone.WHITE:
+            return self.white_player
 
+    # 次の手番は人間の画面クリックか？
     def is_human_turn(self):
-        return not self.is_machine_turn()
+        return self.get_turn() == Player.HUMAN
 
-    # 次の手番がコンピュータなら
-    # AIに指し手を選択させる
+    # 次の手番がコンピュータなら AIに指し手を選択させる
     def proc_machine_turn(self):
-        ai = ai_randum.AI()
-        while True:
-            if self.is_machine_turn():
-                position = ai.select_move(self.board)
-                self.game_move(position)  # 局面を進める
-                if self.game_mode == GameState.END:
-                    break  # 対局終了していたら抜ける
-            else:
-                break
+        ai = game.get_turn().get_ai()
+        while not self.is_human_turn():
+            position = ai.select_move(self.board)
+            self.game_move(position)  # 局面を進める
+            if self.game_mode == GameState.END:
+                break  # 対局終了していたら抜ける
 
     def score_str(self):
-        (black_discs, white_discs) = game.board.get_discs()
+        discs = game.board.get_discs()
         return " {}:{} {}:{}".format(
-            LocaleStr.JA_NAMES[Stone.BLACK], black_discs,
-            LocaleStr.JA_NAMES[Stone.WHITE], white_discs
+            LocaleStr.JA_NAMES[Stone.BLACK], discs[Stone.BLACK],
+            LocaleStr.JA_NAMES[Stone.WHITE], discs[Stone.WHITE]
         )
 
     def result_str(self):
-        (black_discs, white_discs) = game.board.get_discs()
-        if black_discs == white_discs:
+        discs = game.board.get_discs()
+        if discs[Stone.BLACK] == discs[Stone.WHITE]:
             return " 引き分け"
-        elif black_discs > white_discs:
-            return " {}の勝ち ".format(LocaleStr.JA_NAMES[Stone.BLACK])
-        else:
-            return " {}の勝ち ".format(LocaleStr.JA_NAMES[Stone.WHITE])
+
+        winer = Stone.WHITE
+        if discs[Stone.BLACK] > discs[Stone.WHITE]:
+            winer = Stone.BLACK
+
+        return " {}の勝ち ".format(LocaleStr.JA_NAMES[winer])
+
+    def get_player(self):
+        if self.board.turn == Stone.BLACK:
+            return self.black_player
+        if self.board.turn == Stone.WHITE:
+            return self.white_player
+
 
 # ------------------------
 # UI関数
@@ -286,29 +294,29 @@ def init_board(game):
     game.canvas_board.place(x=16, y=72)
 
     # 対局条件
-    black_label = ttk.Label(text="先手●")
+    black_label = ttk.Label(text=LocaleStr.JA_NAMES["Play_First"])
     black_label.place(x=16, y=4)
     black_rdo0 = ttk.Radiobutton(
-        game.root, value=-1, variable=game.black_var,
+        game.root, value=Player.HUMAN.value, variable=game.tk_vars["black_var"],
         text=LocaleStr.JA_NAMES[Player.HUMAN]
     )
     black_rdo0.place(x=70, y=4)
     black_rdo1 = ttk.Radiobutton(
-        game.root, value=1, variable=game.black_var,
-        text=LocaleStr.JA_NAMES[Player.MACHINE]
+        game.root, value=Player.AI_RANDUM.value, variable=game.tk_vars["black_var"],
+        text=LocaleStr.JA_NAMES[Player.AI_RANDUM]
     )
     black_rdo1.place(x=120, y=4)
 
-    white_label = ttk.Label(text="後手○")
+    white_label = ttk.Label(text=LocaleStr.JA_NAMES["Play_Second"])
     white_label.place(x=16, y=24)
     white_rdo0 = ttk.Radiobutton(
-        game.root, value=-1, variable=game.white_var,
+        game.root, value=Player.HUMAN.value, variable=game.tk_vars["white_var"],
         text=LocaleStr.JA_NAMES[Player.HUMAN]
     )
     white_rdo0.place(x=70, y=24)
     white_rdo1 = ttk.Radiobutton(
-        game.root, value=1, variable=game.white_var,
-        text=LocaleStr.JA_NAMES[Player.MACHINE]
+        game.root, value=Player.AI_RANDUM.value, variable=game.tk_vars["white_var"],
+        text=LocaleStr.JA_NAMES[Player.AI_RANDUM]
     )
     white_rdo1.place(x=120, y=24)
 
@@ -316,9 +324,9 @@ def init_board(game):
     button_start = ttk.Button(
         game.root, text="対局開始", width=6, command=lambda: play_start(game)
     )
-    button_start.place(x=240, y=12)
+    button_start.place(x=300, y=12)
 
-    mess_label = ttk.Label(game.root, textvariable=game.mess_var)
+    mess_label = ttk.Label(game.root, textvariable=game.tk_vars["mess_var"])
     mess_label.place(x=16, y=48)
 
 
@@ -375,7 +383,7 @@ def disp_message(game):
             game.board.move_num, game.score_str(), game.result_str()
         )
 
-    game.mess_var.set(mess)  # メッセージラベルにセット
+    game.tk_vars["mess_var"].set(mess)  # メッセージラベルにセット
 
 
 # 「対局開始」ボタンが押された時
@@ -383,7 +391,10 @@ def disp_message(game):
 
 def play_start(game):
     # 対局開始
-    game.start(Player(game.black_var.get()), Player(game.white_var.get()))
+    game.start(
+        Player(game.tk_vars["black_var"].get()),
+        Player(game.tk_vars["white_var"].get())
+    )
     disp_message(game)  # メッセージ表示
     draw_board(game)    # 盤面を描画
 
@@ -397,19 +408,21 @@ def click_board(event, game):
     if game.game_mode != GameState.PLAYING:
         messagebox.showinfo("", "対局開始してください")
         return
-    y = math.floor(event.y / CELL_PX_SIZE)
-    x = math.floor(event.x / CELL_PX_SIZE)
-    position = Position(x, y)
-    if not game.board.is_movable(position):
-        messagebox.showinfo("", "そこには打てません")
-        return
 
-    game.game_move(position)  # 局面を進める
-    if game.game_mode == GameState.END:
-        return  # 対局終了していたら抜ける
+    if game.is_human_turn():
+        position = Position(
+            x=math.floor(event.x / CELL_PX_SIZE),
+            y=math.floor(event.y / CELL_PX_SIZE)
+        )
+        if not game.board.is_movable(position):
+            messagebox.showinfo("", "そこには打てません")
+            return
+
+        game.game_move(position)  # 局面を進める
+        if game.game_mode == GameState.END:
+            return  # 対局終了していたら抜ける
 
     # 次の手番がコンピュータの場合
-    # （プレイヤーの手番なら何もしない）
     game.proc_machine_turn()
 
 
@@ -417,28 +430,23 @@ def click_board(event, game):
 # メイン処理
 # ------------------------
 root = tkinter.Tk()
-black_var = tkinter.IntVar()
-white_var = tkinter.IntVar()
-mess_var = tkinter.StringVar()
-
 root.title("リバーシ 0.1")
-# ウインドウの幅, 高さ
-window_width = BOARD_PX_SIZE + 32
-window_height = BOARD_PX_SIZE + 88
+tk_vars = {
+    "black_var": tkinter.IntVar(),
+    "white_var": tkinter.IntVar(),
+    "mess_var": tkinter.StringVar()
+}
 # ウインドウサイズを指定
-root.geometry('{}x{}'.format(BOARD_PX_SIZE + 32, BOARD_PX_SIZE + 88))
+root.geometry('{}x{}'.format(BOARD_PX_SIZE + 32, BOARD_PX_SIZE + 90))
 
 # 盤面キャンバスを作成
-# キャンバスを作成
 canvas_board = tkinter.Canvas(root, width=BOARD_PX_SIZE, height=BOARD_PX_SIZE)
 # キャンバスがクリックされた時に呼び出す関数を設定
 canvas_board.bind("<Button-1>", lambda e: click_board(e, game))
 
-game = Game(canvas_board, root, black_var, white_var, mess_var)   # ゲームインスタンス作成
+game = Game(canvas_board, root, tk_vars)   # ゲームインスタンス作成
 init_board(game)
-
 draw_board(game)            # 盤面を描画
 disp_message(game)          # メッセージ表示
 
-# GUIの待ち受けループ
-root.mainloop()
+root.mainloop()             # GUIの待ち受けループ

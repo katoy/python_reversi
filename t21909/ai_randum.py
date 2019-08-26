@@ -8,7 +8,7 @@ import random
 
 
 class AI:
-    SLEEP_SEC = 0.5
+    SLEEP_SEC = 0.01
 
     # 与えられた盤面から指し手を返す
     def select_move(self, board):
