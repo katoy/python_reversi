@@ -28,9 +28,16 @@ class Stone(Enum):
     SPACE = 0   # 空き
     BLACK = 1   # 黒石
     WHITE = -1  # 白石
+    MARK = 9    # おける場所のマーク
 
     def invert(self):
         return Stone(self.value * (-1))
+
+    def color(self):
+        if self == Stone.BLACK:
+            return "black"
+        else:
+            return "white"
 
 
 class Player(Enum):
@@ -132,6 +139,15 @@ class Board:
                         move_list.append(position)
         return move_list
 
+    def set_mark(self, mark_list, disp=True):
+        if disp:
+            stone = Stone.MARK
+        else:
+            stone = Stone.SPACE
+
+        for positon in mark_list:
+            self.board[positon.y][positon.x] = stone
+
     # 局面を進める
     def move(self, position):
         # 石を打つ
@@ -220,12 +236,12 @@ class Game:
     # 局面を進める
     def game_move(self, position):
         self.board.move(position)  # 局面を進める
-        draw_board(self)        # 盤面を描画
+        draw_board(self)           # 盤面を描画
 
         # 終局判定
         if self.board.is_game_end():
             self.game_mode = GameState.END
-            disp_message(self)        # メッセージ表示
+            disp_message(self)     # メッセージ表示
             messagebox.showinfo("", "対局終了")
             return
 
@@ -297,26 +313,26 @@ def init_board(game):
     black_label = ttk.Label(text=LocaleStr.JA_NAMES["Play_First"])
     black_label.place(x=16, y=4)
     black_rdo0 = ttk.Radiobutton(
-        game.root, value=Player.HUMAN.value, variable=game.tk_vars["black_var"],
-        text=LocaleStr.JA_NAMES[Player.HUMAN]
+        game.root, text=LocaleStr.JA_NAMES[Player.HUMAN],
+        value=Player.HUMAN.value, variable=game.tk_vars["black_var"]
     )
     black_rdo0.place(x=70, y=4)
     black_rdo1 = ttk.Radiobutton(
-        game.root, value=Player.AI_RANDUM.value, variable=game.tk_vars["black_var"],
-        text=LocaleStr.JA_NAMES[Player.AI_RANDUM]
+        game.root, text=LocaleStr.JA_NAMES[Player.AI_RANDUM],
+        value=Player.AI_RANDUM.value, variable=game.tk_vars["black_var"]
     )
     black_rdo1.place(x=120, y=4)
 
     white_label = ttk.Label(text=LocaleStr.JA_NAMES["Play_Second"])
     white_label.place(x=16, y=24)
     white_rdo0 = ttk.Radiobutton(
-        game.root, value=Player.HUMAN.value, variable=game.tk_vars["white_var"],
-        text=LocaleStr.JA_NAMES[Player.HUMAN]
+        game.root, text=LocaleStr.JA_NAMES[Player.HUMAN],
+        value=Player.HUMAN.value, variable=game.tk_vars["white_var"]
     )
     white_rdo0.place(x=70, y=24)
     white_rdo1 = ttk.Radiobutton(
-        game.root, value=Player.AI_RANDUM.value, variable=game.tk_vars["white_var"],
-        text=LocaleStr.JA_NAMES[Player.AI_RANDUM]
+        game.root, text=LocaleStr.JA_NAMES[Player.AI_RANDUM],
+        value=Player.AI_RANDUM.value, variable=game.tk_vars["white_var"]
     )
     white_rdo1.place(x=120, y=24)
 
@@ -330,25 +346,39 @@ def init_board(game):
     mess_label.place(x=16, y=48)
 
 
+def draw_stone(canvas, x=0, y=0, fill="black", stone_size=0.8):
+    cx = (x + 0.5) * CELL_PX_SIZE
+    cy = (y + 0.5) * CELL_PX_SIZE
+    r = CELL_PX_SIZE / 2 * stone_size
+    canvas.create_oval(cx - r, cy - r, cx + r, cy + r, fill=fill)
+
+
 def draw_board(game):
     game.canvas_board.delete('all')  # キャンバスをクリア
     # 背景
     game.canvas_board.create_rectangle(
         0, 0, BOARD_PX_SIZE, BOARD_PX_SIZE, fill='#00a000'
     )
+    move_list = []
+    if game.game_mode == GameState.PLAYING and game.is_human_turn():
+        move_list = game.board.get_move_list()
+        game.board.set_mark(move_list, disp=True)
+
     for y in range(DIM):
         for x in range(DIM):
             disc = game.board.board[y][x]
-            if disc != Stone.SPACE:
-                if disc == Stone.BLACK:
-                    color = "black"
-                else:
-                    color = "white"
-                # 石の描画
-                game.canvas_board.create_oval(
-                    x * CELL_PX_SIZE + 4, y * CELL_PX_SIZE + 4,
-                    (x + 1) * CELL_PX_SIZE - 4,
-                    (y + 1) * CELL_PX_SIZE - 4, fill=color)
+            if disc == Stone.BLACK or disc == Stone.WHITE:  # 石の描画
+                draw_stone(
+                    game.canvas_board, x=x, y=y, fill=disc.color()
+                )
+            elif disc == Stone.MARK:  # 次における場所の候補の描画
+                draw_stone(
+                    game.canvas_board,
+                    x=x, y=y, fill=game.board.turn.color(),
+                    stone_size=0.2
+                )
+
+    game.board.set_mark(move_list, disp=False)
 
     # 枠を描画
     for x in range(DIM):
@@ -379,7 +409,7 @@ def disp_message(game):
             game.score_str()
         )
     elif game.game_mode == GameState.END:
-        mess = "対局終了 {}手 {}".format(
+        mess = "対局終了 {}手 {} {}".format(
             game.board.move_num, game.score_str(), game.result_str()
         )
 
@@ -444,9 +474,9 @@ canvas_board = tkinter.Canvas(root, width=BOARD_PX_SIZE, height=BOARD_PX_SIZE)
 # キャンバスがクリックされた時に呼び出す関数を設定
 canvas_board.bind("<Button-1>", lambda e: click_board(e, game))
 
-game = Game(canvas_board, root, tk_vars)   # ゲームインスタンス作成
+game = Game(canvas_board, root, tk_vars)
 init_board(game)
-draw_board(game)            # 盤面を描画
-disp_message(game)          # メッセージ表示
+draw_board(game)    # 盤面を描画
+disp_message(game)  # メッセージ表示
 
-root.mainloop()             # GUIの待ち受けループ
+root.mainloop()     # GUIの待ち受けループ
