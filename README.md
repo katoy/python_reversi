@@ -19,3 +19,11 @@ pycodestyle reversi.py で linte チェックをしています。
   
 その３
 - 人間の手番のときに、石を置ける場所を示すようにした。
+
+
+参考情報
+- https://blog.makotoishida.com/2019/03/reacttypescript-5.html
+  React/TypeScriptでリバーシゲームを作る
+
+- https://www.pytry3g.com/entry/Othello-v1.0
+  tkinterを使ってオセロを作る v1.0

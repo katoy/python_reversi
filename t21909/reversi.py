@@ -9,8 +9,9 @@ import ai_randum
 
 # =========================
 # リバーシ
-# See https://info.nikkeibp.co.jp/media/NSW/atcl/mag/071800024/
+#     https://info.nikkeibp.co.jp/media/NSW/atcl/mag/071800024/
 #     日経ソフトウエア 2019年9月号
+#  をベースにして作成した。
 # =========================
 DIM = 8                             # 一辺のマス数
 BOARD_PX_SIZE = 400                 # 盤面のサイズ
@@ -34,10 +35,12 @@ class Stone(Enum):
         return Stone(self.value * (-1))
 
     def color(self):
-        if self == Stone.BLACK:
-            return "black"
-        else:
-            return "white"
+        colors = {
+            Stone.SPACE: "green",
+            Stone.BLACK: "black",
+            Stone.WHITE: "white"
+        }
+        return colors[self]
 
 
 class Player(Enum):
@@ -69,16 +72,20 @@ class LocaleStr:
 
 class Board:
     # 8方向
-    DIRS = [[dx, dy]
-            for dx in [-1, 0, 1] for dy in [-1, 0, 1]
-            if dx * dx + dy * dy > 0]
+    DIRS = [
+        [dx, dy] for dx in [-1, 0, 1] for dy in [-1, 0, 1]
+        if dx != 0 or dy != 0
+    ]
 
     def __init__(self):
         self.board = [
             [Stone.SPACE for _ in range(DIM)] for _ in range(DIM)
         ]
-        self.turn = Stone.BLACK   # 手番
-        self.move_num = 0         # 手数
+        self.init_status()
+
+    # (x, y) が bord 上にあるか？
+    def in_board(self, x, y):
+        return (0 <= x < DIM) and (0 <= y < DIM)
 
     # 盤面の初期化（初期配置）
     def init_board(self):
@@ -87,15 +94,14 @@ class Board:
                 self.board[y][x] = Stone.SPACE
 
         c0 = DIM // 2 - 1
-        for dy in range(2):
-            for dx in range(2):
-                val = 2 * ((dx + dy) % 2) - 1
-                self.board[c0 + dy][c0 + dx] = Stone(val)
+        self.board[c0][c0] = Stone.BLACK
+        self.board[c0 + 1][c0 + 1] = Stone.BLACK
+        self.board[c0 + 1][c0] = Stone.WHITE
+        self.board[c0][c0 + 1] = Stone.WHITE
 
-        self.turn = Stone.BLACK   # 手番
-        self.move_num = 0         # 手数
+        self.init_status()
 
-    # 黒白の石数をタプルで返す
+    # 黒白の石数を Dict で返す
     def get_discs(self):
         discs = {Stone.BLACK: 0, Stone.WHITE: 0, Stone.SPACE: 0}
         for y in range(DIM):
@@ -103,41 +109,47 @@ class Board:
                 discs[(self.board[y][x])] += 1
         return discs
 
+    # 手番、手数ｎ初期化
+    def init_status(self):
+        self.turn = Stone.BLACK  # 手番
+        self.move_num = 0       # 手数
+
     # 指定のマスに石を打てるか？
     def is_movable(self, position):
+        return self.is_movable_xy(position.x, position.y)
+
+    def is_movable_xy(self, px, py):
         # 空きでなければ打てない
-        if self.board[position.y][position.x] != Stone.SPACE:
+        if self.board[py][px] != Stone.SPACE:
             return False
 
         # 各方向に石をひっくり返せるか？
-        for dir in Board.DIRS:
-            y = position.y + dir[0]
-            x = position.x + dir[1]
-            if y >= 0 and x >= 0 and y < 8 and x < 8 \
-                    and self.board[y][x].value == -self.turn.value:
+        for dx, dy in Board.DIRS:
+            y = py + dy
+            x = px + dx
+            enemy = self.turn.invert()
+            if self.in_board(x, y) \
+                    and self.board[y][x] == enemy:
                 # 隣が相手の石
-                y += dir[0]
-                x += dir[1]
-                while y >= 0 and x >= 0 and y < 8 and x < 8 \
-                        and self.board[y][x].value == -self.turn.value:
-                    y += dir[0]
-                    x += dir[1]
-                if y >= 0 and x >= 0 and y < 8 and x < 8 \
-                        and self.board[y][x].value == self.turn.value:
+                y += dy
+                x += dx
+                while self.in_board(x, y) \
+                        and self.board[y][x] == enemy:
+                    y += dy
+                    x += dx
+                if self.in_board(x, y) \
+                        and self.board[y][x] == self.turn:
                     return True
 
         return False
 
     # 石を打てる Position のリストを返す
     def get_move_list(self):
-        move_list = []
-        for y in range(DIM):
-            for x in range(DIM):
-                if self.board[y][x] == Stone.SPACE:
-                    position = Position(x, y)
-                    if self.is_movable(position):
-                        move_list.append(position)
-        return move_list
+        return [
+            Position(x, y)
+            for x in range(DIM) for y in range(DIM)
+            if self.is_movable_xy(x, y)
+        ]
 
     def set_mark(self, mark_list, disp=True):
         if disp:
@@ -155,30 +167,31 @@ class Board:
 
         # 石をひっくり返す
         # 各方向に石をひっくり返せるか調べる
-        for dir in Board.DIRS:
-            y = position.y + dir[0]
-            x = position.x + dir[1]
-            if y >= 0 and x >= 0 and y < DIM and x < DIM \
-                    and self.board[y][x].value == -self.turn.value:
+        for dx, dy in Board.DIRS:
+            y = position.y + dy
+            x = position.x + dx
+            enemy = self.turn.invert()
+            if self.in_board(x, y) \
+                    and self.board[y][x] == enemy:
                 # 隣が相手の石
-                y += dir[0]
-                x += dir[1]
-                while y >= 0 and x >= 0 and y < DIM and x < DIM \
-                        and self.board[y][x].value == -self.turn.value:
-                    y += dir[0]
-                    x += dir[1]
-                if y >= 0 and x >= 0 and y < 8 and x < 8 \
-                        and self.board[y][x].value == self.turn.value:
+                y += dy
+                x += dx
+                while self.in_board(x, y) \
+                        and self.board[y][x] == enemy:
+                    y += dy
+                    x += dx
+                if self.in_board(x, y) \
+                        and self.board[y][x] == self.turn:
                     # この方向は返せる
                     # 1マス戻る
-                    y -= dir[0]
-                    x -= dir[1]
+                    y -= dy
+                    x -= dx
                     # 戻りながら返す
-                    while y >= 0 and x >= 0 and y < DIM and x < DIM \
-                            and self.board[y][x].value == -self.turn.value:
+                    while self.in_board(x, y) \
+                            and self.board[y][x] == enemy:
                         self.board[y][x] = Stone(self.turn.value)
-                        y -= dir[0]
-                        x -= dir[1]
+                        y -= dy
+                        x -= dx
 
         self.turn = self.turn.invert()  # 手番を変更
         self.move_num += 1    # 手数を増やす
@@ -236,13 +249,12 @@ class Game:
     # 局面を進める
     def game_move(self, position):
         self.board.move(position)  # 局面を進める
-        draw_board(self)           # 盤面を描画
+        self.draw_board()          # 盤面を描画
 
         # 終局判定
         if self.board.is_game_end():
             self.game_mode = GameState.END
-            disp_message(self)     # メッセージ表示
-            messagebox.showinfo("", "対局終了")
+            self.disp_message()  # メッセージ表示
             return
 
         # パス判定
@@ -253,7 +265,7 @@ class Game:
             if self.is_human_turn():
                 messagebox.showinfo("パス", "打てる場所がないのでパスします")
 
-        disp_message(self)          # メッセージ表示
+        self.disp_message()  # メッセージ表示
 
     def get_turn(self):
         if self.board.turn == Stone.BLACK:
@@ -298,13 +310,76 @@ class Game:
         if self.board.turn == Stone.WHITE:
             return self.white_player
 
+    # メッセージ表示
+    def disp_message(self):
+        mess = ""
+        if self.game_mode == GameState.STAY:
+            mess = "対局を開始してください"
+        elif self.game_mode == GameState.PLAYING:
+            mess += "対局中 {}手目 {}番 {}".format(
+                self.board.move_num, LocaleStr.JA_NAMES[self.board.turn],
+                self.score_str()
+            )
+        elif self.game_mode == GameState.END:
+            mess = "対局終了 {}手 {} {}".format(
+                self.board.move_num, self.score_str(), self.result_str()
+            )
+
+        self.tk_vars["mess_var"].set(mess)  # メッセージラベルにセット
+
+    def draw_board(self):
+        self.canvas_board.delete('all')  # キャンバスをクリア
+        # 背景
+        self.canvas_board.create_rectangle(
+            0, 0, BOARD_PX_SIZE, BOARD_PX_SIZE, fill='#00a000'
+        )
+        move_list = []
+        if self.game_mode == GameState.PLAYING and self.is_human_turn():
+            move_list = self.board.get_move_list()
+            self.board.set_mark(move_list, disp=True)
+
+        for y in range(DIM):
+            for x in range(DIM):
+                disc = self.board.board[y][x]
+                if disc == Stone.BLACK or disc == Stone.WHITE:  # 石の描画
+                    self.draw_stone(
+                        x=x, y=y, fill=disc.color()
+                    )
+                elif disc == Stone.MARK:  # 次における場所の候補の描画
+                    self.draw_stone(
+                        x=x, y=y, fill=self.board.turn.color(),
+                        stone_size=0.2
+                    )
+
+        self.board.set_mark(move_list, disp=False)
+
+        # 枠を描画
+        for x in range(DIM):
+            game.canvas_board.create_line(
+                x * CELL_PX_SIZE,
+                0, x * CELL_PX_SIZE, BOARD_PX_SIZE,
+                fill="black", width=1
+            )
+        for y in range(DIM):
+            game.canvas_board.create_line(
+                0, y * CELL_PX_SIZE,
+                BOARD_PX_SIZE, y * CELL_PX_SIZE,
+                fill="black", width=1
+            )
+
+        game.canvas_board.update()
+
+    def draw_stone(self, x=0, y=0, fill="black", stone_size=0.8):
+        cx = (x + 0.5) * CELL_PX_SIZE
+        cy = (y + 0.5) * CELL_PX_SIZE
+        r = CELL_PX_SIZE / 2 * stone_size
+        self.canvas_board.create_oval(
+            cx - r, cy - r, cx + r, cy + r, fill=fill)
+
 
 # ------------------------
 # UI関数
 # ------------------------
-# 盤面の描画
-
-
 def init_board(game):
     # キャンバスの位置を指定
     game.canvas_board.place(x=16, y=72)
@@ -345,77 +420,6 @@ def init_board(game):
     mess_label = ttk.Label(game.root, textvariable=game.tk_vars["mess_var"])
     mess_label.place(x=16, y=48)
 
-
-def draw_stone(canvas, x=0, y=0, fill="black", stone_size=0.8):
-    cx = (x + 0.5) * CELL_PX_SIZE
-    cy = (y + 0.5) * CELL_PX_SIZE
-    r = CELL_PX_SIZE / 2 * stone_size
-    canvas.create_oval(cx - r, cy - r, cx + r, cy + r, fill=fill)
-
-
-def draw_board(game):
-    game.canvas_board.delete('all')  # キャンバスをクリア
-    # 背景
-    game.canvas_board.create_rectangle(
-        0, 0, BOARD_PX_SIZE, BOARD_PX_SIZE, fill='#00a000'
-    )
-    move_list = []
-    if game.game_mode == GameState.PLAYING and game.is_human_turn():
-        move_list = game.board.get_move_list()
-        game.board.set_mark(move_list, disp=True)
-
-    for y in range(DIM):
-        for x in range(DIM):
-            disc = game.board.board[y][x]
-            if disc == Stone.BLACK or disc == Stone.WHITE:  # 石の描画
-                draw_stone(
-                    game.canvas_board, x=x, y=y, fill=disc.color()
-                )
-            elif disc == Stone.MARK:  # 次における場所の候補の描画
-                draw_stone(
-                    game.canvas_board,
-                    x=x, y=y, fill=game.board.turn.color(),
-                    stone_size=0.2
-                )
-
-    game.board.set_mark(move_list, disp=False)
-
-    # 枠を描画
-    for x in range(DIM):
-        game.canvas_board.create_line(
-            x * CELL_PX_SIZE,
-            0, x * CELL_PX_SIZE, BOARD_PX_SIZE,
-            fill="black", width=1
-        )
-    for y in range(DIM):
-        game.canvas_board.create_line(
-            0, y * CELL_PX_SIZE,
-            BOARD_PX_SIZE, y * CELL_PX_SIZE,
-            fill="black", width=1
-        )
-
-    game.canvas_board.update()
-
-# メッセージ表示
-
-
-def disp_message(game):
-    mess = ""
-    if game.game_mode == GameState.STAY:
-        mess = "対局を開始してください"
-    elif game.game_mode == GameState.PLAYING:
-        mess += "対局中 {}手目 {}番 {}".format(
-            game.board.move_num, LocaleStr.JA_NAMES[game.board.turn],
-            game.score_str()
-        )
-    elif game.game_mode == GameState.END:
-        mess = "対局終了 {}手 {} {}".format(
-            game.board.move_num, game.score_str(), game.result_str()
-        )
-
-    game.tk_vars["mess_var"].set(mess)  # メッセージラベルにセット
-
-
 # 「対局開始」ボタンが押された時
 
 
@@ -425,8 +429,8 @@ def play_start(game):
         Player(game.tk_vars["black_var"].get()),
         Player(game.tk_vars["white_var"].get())
     )
-    disp_message(game)  # メッセージ表示
-    draw_board(game)    # 盤面を描画
+    game.disp_message()  # メッセージ表示
+    game.draw_board()   # 盤面を描画
 
     # 次の手番がコンピュータの場合（人間の手番なら何もしない）
     game.proc_machine_turn()
@@ -440,15 +444,12 @@ def click_board(event, game):
         return
 
     if game.is_human_turn():
-        position = Position(
-            x=math.floor(event.x / CELL_PX_SIZE),
-            y=math.floor(event.y / CELL_PX_SIZE)
-        )
-        if not game.board.is_movable(position):
-            messagebox.showinfo("", "そこには打てません")
+        x = math.floor(event.x / CELL_PX_SIZE)
+        y = math.floor(event.y / CELL_PX_SIZE)
+        if not game.board.is_movable_xy(x, y):
             return
 
-        game.game_move(position)  # 局面を進める
+        game.game_move(Position(x=x, y=y))  # 局面を進める
         if game.game_mode == GameState.END:
             return  # 対局終了していたら抜ける
 
@@ -476,7 +477,7 @@ canvas_board.bind("<Button-1>", lambda e: click_board(e, game))
 
 game = Game(canvas_board, root, tk_vars)
 init_board(game)
-draw_board(game)    # 盤面を描画
-disp_message(game)  # メッセージ表示
+game.draw_board()   # 盤面を描画
+game.disp_message() # メッセージ表示
 
 root.mainloop()     # GUIの待ち受けループ
