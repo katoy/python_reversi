@@ -4,6 +4,7 @@ import math
 import tkinter
 from tkinter import messagebox
 from tkinter import ttk
+from time import time, sleep
 
 import ai_randum
 
@@ -36,7 +37,7 @@ class Stone(Enum):
 
     def color(self):
         colors = {
-            Stone.SPACE: "green",
+            Stone.SPACE: "#00a000",
             Stone.BLACK: "black",
             Stone.WHITE: "white"
         }
@@ -162,6 +163,7 @@ class Board:
 
     # 局面を進める
     def move(self, position):
+        reverse_stons = []
         # 石を打つ
         self.board[position.y][position.x] = Stone(self.turn.value)
 
@@ -187,14 +189,19 @@ class Board:
                     y -= dy
                     x -= dx
                     # 戻りながら返す
+                    stons = []
                     while self.in_board(x, y) \
                             and self.board[y][x] == enemy:
                         self.board[y][x] = Stone(self.turn.value)
+                        stons.append([x, y])
                         y -= dy
                         x -= dx
 
+                    reverse_stons.append(stons)
+
         self.turn = self.turn.invert()  # 手番を変更
-        self.move_num += 1    # 手数を増やす
+        self.move_num += 1              # 手数を増やす
+        return reverse_stons
 
     # パスする
     def move_pass(self):
@@ -248,8 +255,8 @@ class Game:
 
     # 局面を進める
     def game_move(self, position):
-        self.board.move(position)  # 局面を進める
-        self.draw_board()          # 盤面を描画
+        reverse_stones = self.board.move(position)  # 局面を進める
+        self.draw_board(position, reverse_stones)             # 盤面を描画
 
         # 終局判定
         if self.board.is_game_end():
@@ -327,11 +334,52 @@ class Game:
 
         self.tk_vars["mess_var"].set(mess)  # メッセージラベルにセット
 
-    def draw_board(self):
+    def draw_board(self, position, reverse_stones=[]):
+        if self.black_player == Player.HUMAN or \
+                self.white_player == Player.HUMAN:
+            self.draw_stone(
+                x=position.x, y=position.y,
+                fill=self.board.turn.invert().color()
+            )
+            self.animation_reverse(reverse_stones)
+
+        self.redraw()
+
+    def animation_reverse(self, reverse_stones):
+        fill_0 = self.board.turn.color()
+        fill_1 = self.board.turn.invert().color()
+        r0 = CELL_PX_SIZE / 2 * 0.9
+        r = CELL_PX_SIZE / 2 * 0.8
+        count = 5
+        for stones in reverse_stones:
+            for i in range(-count, count):
+                for pos in stones:
+                    cx = (pos[0] + 0.5) * CELL_PX_SIZE
+                    cy = (pos[1] + 0.5) * CELL_PX_SIZE
+                    self.canvas_board.create_oval(
+                        cx - r0, cy - r0, cx + r0, cy + r0,
+                        fill="#00a000", outline=""
+                    )
+
+                    if i < 0:
+                        fill = fill_0
+                    else:
+                        fill = fill_1
+                    dr = r * abs(i) / count
+                    self.canvas_board.create_oval(
+                        cx - dr, cy - r,
+                        cx + dr, cy + r,
+                        fill=fill
+                    )
+
+                self.canvas_board.update()
+                sleep(0.02)
+
+    def redraw(self):
         self.canvas_board.delete('all')  # キャンバスをクリア
         # 背景
         self.canvas_board.create_rectangle(
-            0, 0, BOARD_PX_SIZE, BOARD_PX_SIZE, fill='#00a000'
+            0, 0, BOARD_PX_SIZE, BOARD_PX_SIZE, fill="#00a000"
         )
         move_list = []
         if self.game_mode == GameState.PLAYING and self.is_human_turn():
@@ -354,17 +402,13 @@ class Game:
         self.board.set_mark(move_list, disp=False)
 
         # 枠を描画
-        for x in range(DIM):
+        for i in range(DIM):
+            d = i * CELL_PX_SIZE
             game.canvas_board.create_line(
-                x * CELL_PX_SIZE,
-                0, x * CELL_PX_SIZE, BOARD_PX_SIZE,
-                fill="black", width=1
+                d, 0, d, BOARD_PX_SIZE, fill="black", width=1
             )
-        for y in range(DIM):
             game.canvas_board.create_line(
-                0, y * CELL_PX_SIZE,
-                BOARD_PX_SIZE, y * CELL_PX_SIZE,
-                fill="black", width=1
+                0, d, BOARD_PX_SIZE, d, fill="black", width=1
             )
 
         game.canvas_board.update()
@@ -430,7 +474,7 @@ def play_start(game):
         Player(game.tk_vars["white_var"].get())
     )
     game.disp_message()  # メッセージ表示
-    game.draw_board()   # 盤面を描画
+    game.redraw()        # 盤面を描画
 
     # 次の手番がコンピュータの場合（人間の手番なら何もしない）
     game.proc_machine_turn()
@@ -477,7 +521,7 @@ canvas_board.bind("<Button-1>", lambda e: click_board(e, game))
 
 game = Game(canvas_board, root, tk_vars)
 init_board(game)
-game.draw_board()   # 盤面を描画
-game.disp_message() # メッセージ表示
+game.redraw()        # 盤面を描画
+game.disp_message()  # メッセージ表示
 
 root.mainloop()     # GUIの待ち受けループ
