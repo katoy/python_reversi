@@ -245,6 +245,7 @@ class Game:
         self.canvas_board = canvas_board
         self.root = root
         self.tk_vars = tk_vers
+        self.g_stones = [[None for _ in range(DIM)] for _ in range(DIM)]
 
     # 対局開始
     def start(self, _black_player, _white_player):
@@ -255,8 +256,9 @@ class Game:
 
     # 局面を進める
     def game_move(self, position):
-        reverse_stones = self.board.move(position)  # 局面を進める
-        self.draw_board(position, reverse_stones)             # 盤面を描画
+        if position:
+            reverse_stones = self.board.move(position)  # 局面を進める
+            self.draw_board(position, reverse_stones)   # 盤面を描画
 
         # 終局判定
         if self.board.is_game_end():
@@ -271,6 +273,7 @@ class Game:
             self.board.move_pass()
             if self.is_human_turn():
                 messagebox.showinfo("パス", "打てる場所がないのでパスします")
+                self.redraw()
 
         self.disp_message()  # メッセージ表示
 
@@ -348,28 +351,23 @@ class Game:
     def animation_reverse(self, reverse_stones):
         fill_0 = self.board.turn.color()
         fill_1 = self.board.turn.invert().color()
-        r0 = CELL_PX_SIZE / 2 * 0.9
         r = CELL_PX_SIZE / 2 * 0.8
         count = 5
         for stones in reverse_stones:
             for i in range(-count, count):
                 for pos in stones:
+                    id = self.g_stones[pos[1]][pos[0]]
                     cx = (pos[0] + 0.5) * CELL_PX_SIZE
                     cy = (pos[1] + 0.5) * CELL_PX_SIZE
-                    self.canvas_board.create_oval(
-                        cx - r0, cy - r0, cx + r0, cy + r0,
-                        fill="#00a000", outline=""
-                    )
-
                     if i < 0:
                         fill = fill_0
                     else:
                         fill = fill_1
+
                     dr = r * abs(i) / count
-                    self.canvas_board.create_oval(
-                        cx - dr, cy - r,
-                        cx + dr, cy + r,
-                        fill=fill
+                    self.canvas_board.itemconfigure(id, fill=fill)
+                    self.canvas_board.coords(
+                        id, cx - dr, cy - r, cx + dr, cy + r
                     )
 
                 self.canvas_board.update()
@@ -377,6 +375,8 @@ class Game:
 
     def redraw(self):
         self.canvas_board.delete('all')  # キャンバスをクリア
+        self.g_stones = [[None for _ in range(DIM)] for _ in range(DIM)]
+
         # 背景
         self.canvas_board.create_rectangle(
             0, 0, BOARD_PX_SIZE, BOARD_PX_SIZE, fill="#00a000"
@@ -388,15 +388,24 @@ class Game:
 
         for y in range(DIM):
             for x in range(DIM):
+                cx = (x + 0.5) * CELL_PX_SIZE
+                cy = (y + 0.5) * CELL_PX_SIZE
+                r = CELL_PX_SIZE / 2 * 0.9
+                self.g_stones[y][x] = self.canvas_board.create_oval(
+                    cx - r, cy - r, cx + r, cy + r,
+                    fill="#00a000", outline=""
+                )
+
+        for y in range(DIM):
+            for x in range(DIM):
                 disc = self.board.board[y][x]
+                id = self.g_stones[y][x]
                 if disc == Stone.BLACK or disc == Stone.WHITE:  # 石の描画
-                    self.draw_stone(
-                        x=x, y=y, fill=disc.color()
-                    )
+                    self.canvas_board.itemconfigure(id, fill=disc.color())
                 elif disc == Stone.MARK:  # 次における場所の候補の描画
                     self.draw_stone(
-                        x=x, y=y, fill=self.board.turn.color(),
-                        stone_size=0.2
+                        x=x, y=y,
+                        fill=self.board.turn.color(), stone_size=0.2
                     )
 
         self.board.set_mark(move_list, disp=False)
@@ -414,11 +423,12 @@ class Game:
         game.canvas_board.update()
 
     def draw_stone(self, x=0, y=0, fill="black", stone_size=0.8):
+        id = self.g_stones[y][x]
         cx = (x + 0.5) * CELL_PX_SIZE
         cy = (y + 0.5) * CELL_PX_SIZE
         r = CELL_PX_SIZE / 2 * stone_size
-        self.canvas_board.create_oval(
-            cx - r, cy - r, cx + r, cy + r, fill=fill)
+        self.canvas_board.itemconfigure(id, fill=fill)
+        self.canvas_board.coords(id, cx - r, cy - r, cx + r, cy + r)
 
 
 # ------------------------

@@ -14,6 +14,8 @@ class AI:
     def select_move(self, board):
         time.sleep(AI.SLEEP_SEC)  # すこし待つ
         move_list = board.get_move_list()
+        if len(move_list) == 0:
+            return None
         # ランダムに指し手を選ぶ
         r = random.randint(0, len(move_list) - 1)
         return move_list[r]
