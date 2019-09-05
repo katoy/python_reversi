@@ -95,10 +95,10 @@ class Board:
                 self.board[y][x] = Stone.SPACE
 
         c0 = DIM // 2 - 1
-        self.board[c0][c0] = Stone.BLACK
-        self.board[c0 + 1][c0 + 1] = Stone.BLACK
-        self.board[c0 + 1][c0] = Stone.WHITE
-        self.board[c0][c0 + 1] = Stone.WHITE
+        self.board[c0][c0] = Stone.WHITE
+        self.board[c0 + 1][c0 + 1] = Stone.WHITE
+        self.board[c0 + 1][c0] = Stone.BLACK
+        self.board[c0][c0 + 1] = Stone.BLACK
 
         self.init_status()
 

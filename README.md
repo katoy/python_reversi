@@ -27,3 +27,21 @@ pycodestyle reversi.py で linte チェックをしています。
 
 - https://www.pytry3g.com/entry/Othello-v1.0
   tkinterを使ってオセロを作る v1.0
+
+- https://app.lavox.net/kifubox/
+  棋譜Boxは、Richard Delorme氏によるGPL v3ソフトウェアEdax4.4のソースコードを改変して使用しています。
+  改変したソースコードはhttps://github.com/lavox/edax-reversi/releases/tag/libEdax4i-1.1にて入手可能です
+
+- https://github.com/abulmo/edax-reversi
+  Edax reversi version 4.4 and above
+
+- http://el-ement.com/blog/2017/02/20/reversi-ai/
+  PCやスマートフォンのブラウザ上で動くリバーシ（オセロ）AIを作りました。
+  棋譜の読み込み・優劣のグラフ表示機能があるので対局の研究に使えます。
+
+- https://mayumen.com/1419.html
+  オセロの棋譜とは？棋譜を採るタイミングや棋譜を採る意味は？
+
+- https://qiita.com/sensuikan1973/items/459b3e11d91f3cb37e43
+  オセロをビットボードで実装する
+
