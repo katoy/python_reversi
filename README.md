@@ -20,6 +20,9 @@ pycodestyle reversi.py で linte チェックをしています。
 その３
 - 人間の手番のときに、石を置ける場所を示すようにした。
 
+その４
+- 棋譜の load / save
+- undo / redo
 
 参考情報
 - https://blog.makotoishida.com/2019/03/reacttypescript-5.html
@@ -45,3 +48,5 @@ pycodestyle reversi.py で linte チェックをしています。
 - https://qiita.com/sensuikan1973/items/459b3e11d91f3cb37e43
   オセロをビットボードで実装する
 
+- https://github.com/shionhonda/IaGo
+  AlphaGoを模したオセロAIを作る
