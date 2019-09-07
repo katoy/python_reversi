@@ -13,19 +13,21 @@ class Game:
     def __init__(self, canvas_board, root, tk_vers):
         self.game_mode = GameState.STAY
 
-        self.black_player = Player.HUMAN
-        self.white_player = Player.HUMAN
         self.board = Board()  # 盤面作成
-        self.board.init_board()  # 盤面の初期化
         self.canvas_board = canvas_board
         self.root = root
         self.tk_vars = tk_vers
         self.g_stones = [[None for _ in range(DIM)] for _ in range(DIM)]
+        self.start()
 
     # 対局開始
-    def start(self, _black_player, _white_player):
+    def start(
+            self,
+            _black_player=Player.HUMAN, _white_player=Player.HUMAN):
+
         self.black_player = _black_player
         self.white_player = _white_player
+        self.last_move = None
         self.game_mode = GameState.PLAYING
         self.board.init_board()  # 盤面の初期化
 
@@ -34,6 +36,7 @@ class Game:
         if position:
             reverse_stones = self.board.move(position)  # 局面を進める
             self.draw_board(position, reverse_stones)   # 盤面を描画
+            self.last_move = position
 
         # 終局判定
         if self.board.is_game_end():
@@ -74,8 +77,8 @@ class Game:
     def score_str(self):
         discs = self.board.get_discs()
         return " {}:{} {}:{}".format(
-            LocaleStr.JA_NAMES[Stone.BLACK], discs[Stone.BLACK],
-            LocaleStr.JA_NAMES[Stone.WHITE], discs[Stone.WHITE]
+            LocaleStr.names(Stone.BLACK), discs[Stone.BLACK],
+            LocaleStr.names(Stone.WHITE), discs[Stone.WHITE]
         )
 
     def result_str(self):
@@ -87,7 +90,7 @@ class Game:
         if discs[Stone.BLACK] > discs[Stone.WHITE]:
             winer = Stone.BLACK
 
-        return " {}の勝ち ".format(LocaleStr.JA_NAMES[winer])
+        return " {}の勝ち ".format(LocaleStr.names(winer))
 
     def get_player(self):
         if self.board.turn == Stone.BLACK:
@@ -101,9 +104,9 @@ class Game:
         if self.game_mode == GameState.STAY:
             mess = "対局を開始してください"
         elif self.game_mode == GameState.PLAYING:
-            mess += "対局中 {}手目 {}番 {}".format(
-                self.board.move_num, LocaleStr.JA_NAMES[self.board.turn],
-                self.score_str()
+            mess += "対局中  {}手目 {} 次の手番 {}".format(
+                self.board.move_num, self.score_str(),
+                LocaleStr.names(self.board.turn)
             )
         elif self.game_mode == GameState.END:
             mess = "対局終了 {}手 {} {}".format(
@@ -113,6 +116,7 @@ class Game:
         self.tk_vars["mess_var"].set(mess)  # メッセージラベルにセット
 
     def draw_board(self, position, reverse_stones=[]):
+        self.last_move = position
         if self.black_player == Player.HUMAN or \
                 self.white_player == Player.HUMAN:
             self.draw_stone(
@@ -184,6 +188,7 @@ class Game:
                     )
 
         self.board.set_mark(move_list, disp=False)
+        self.draw_last_stone()
 
         # 枠を描画
         for i in range(DIM):
@@ -204,3 +209,18 @@ class Game:
         r = CELL_PX_SIZE / 2 * stone_size
         self.canvas_board.itemconfigure(id, fill=fill)
         self.canvas_board.coords(id, cx - r, cy - r, cx + r, cy + r)
+
+    def draw_last_stone(self, stone_size=0.2):
+        if self.last_move is None:
+            return
+
+        cx = (self.last_move.x + 0.5) * CELL_PX_SIZE
+        cy = (self.last_move.y + 0.5) * CELL_PX_SIZE
+        r = CELL_PX_SIZE / 2 * stone_size
+        self.g_last_stone = self.canvas_board.create_oval(
+            cx - r, cy - r, cx + r, cy + r, fill="red", outline=""
+        )
+
+    def hide_last_stone(self):
+        id = self.g_last_stone
+        self.canvas_board.coords(id, 0, 0, 0, 0)

@@ -26,28 +26,28 @@ def init_board(game):
     game.canvas_board.place(x=16, y=72)
 
     # 対局条件
-    black_label = ttk.Label(text=LocaleStr.JA_NAMES["Play_First"])
+    black_label = ttk.Label(text=LocaleStr.names("Play_First"))
     black_label.place(x=16, y=4)
     black_rdo0 = ttk.Radiobutton(
-        game.root, text=LocaleStr.JA_NAMES[Player.HUMAN],
+        game.root, text=LocaleStr.names(Player.HUMAN),
         value=Player.HUMAN.value, variable=game.tk_vars["black_var"]
     )
     black_rdo0.place(x=70, y=4)
     black_rdo1 = ttk.Radiobutton(
-        game.root, text=LocaleStr.JA_NAMES[Player.AI_RANDUM],
+        game.root, text=LocaleStr.names(Player.AI_RANDUM),
         value=Player.AI_RANDUM.value, variable=game.tk_vars["black_var"]
     )
     black_rdo1.place(x=120, y=4)
 
-    white_label = ttk.Label(text=LocaleStr.JA_NAMES["Play_Second"])
+    white_label = ttk.Label(text=LocaleStr.names("Play_Second"))
     white_label.place(x=16, y=24)
     white_rdo0 = ttk.Radiobutton(
-        game.root, text=LocaleStr.JA_NAMES[Player.HUMAN],
+        game.root, text=LocaleStr.names(Player.HUMAN),
         value=Player.HUMAN.value, variable=game.tk_vars["white_var"]
     )
     white_rdo0.place(x=70, y=24)
     white_rdo1 = ttk.Radiobutton(
-        game.root, text=LocaleStr.JA_NAMES[Player.AI_RANDUM],
+        game.root, text=LocaleStr.names(Player.AI_RANDUM),
         value=Player.AI_RANDUM.value, variable=game.tk_vars["white_var"]
     )
     white_rdo1.place(x=120, y=24)
@@ -109,7 +109,7 @@ tk_vars = {
     "mess_var": tkinter.StringVar()
 }
 # ウインドウサイズを指定
-root.geometry('{}x{}'.format(BOARD_PX_SIZE + 32, BOARD_PX_SIZE + 90))
+root.geometry('{}x{}'.format(BOARD_PX_SIZE + 32, BOARD_PX_SIZE + 180))
 
 # 盤面キャンバスを作成
 canvas_board = tkinter.Canvas(root, width=BOARD_PX_SIZE, height=BOARD_PX_SIZE)

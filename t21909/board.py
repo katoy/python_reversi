@@ -16,7 +16,7 @@ class Board:
         ]
         self.init_status()
 
-    # (x, y) が bord 上にあるか？
+    # (x, y) が board 上にあるか？
     def in_board(self, x, y):
         return (0 <= x < DIM) and (0 <= y < DIM)
 
@@ -42,7 +42,7 @@ class Board:
                 discs[(self.board[y][x])] += 1
         return discs
 
-    # 手番、手数ｎ初期化
+    # 手番、手数の初期化
     def init_status(self):
         self.turn = Stone.BLACK  # 手番
         self.move_num = 0       # 手数
