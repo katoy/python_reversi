@@ -34,6 +34,25 @@ class Board:
 
         self.init_status()
 
+    def set_board(self, turn, ary2d):
+        num = 0
+        for y in range(DIM):
+            for x in range(DIM):
+                c = ary2d[y][x]
+                if c == "o":
+                    self.board[y][x] = Stone.WHITE
+                    num += 1
+                elif c == "x":
+                    self.board[y][x] = Stone.BLACK
+                    num += 1
+                else:
+                    self.board[y][x] = Stone.SPACE
+
+        self.turn = turn     # 手番
+        self.move_num = num  # 手数
+
+        return self
+
     # 黒白の石数を Dict で返す
     def get_discs(self):
         discs = {Stone.BLACK: 0, Stone.WHITE: 0, Stone.SPACE: 0}
@@ -77,7 +96,7 @@ class Board:
         return False
 
     # 石を打てる Position のリストを返す
-    def get_move_list(self):
+    def get_moveable_list(self):
         return [
             Position(x, y)
             for x in range(DIM) for y in range(DIM)
@@ -151,10 +170,10 @@ class Board:
             return True
 
         # 黒白どちらも手がない場合
-        move_list1 = self.get_move_list()
+        move_list1 = self.get_moveable_list()
         if len(move_list1) == 0:
             self.move_pass()  # パスして相手番にする
-            move_list2 = self.get_move_list()
+            move_list2 = self.get_moveable_list()
             self.move_pass()  # パスして戻す
             if len(move_list2) == 0:
                 return True

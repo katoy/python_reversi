@@ -61,6 +61,29 @@ def init_board(game):
     mess_label = ttk.Label(game.root, textvariable=game.tk_vars["mess_var"])
     mess_label.place(x=16, y=48)
 
+    button_undo = ttk.Button(
+        game.root, text="undo", width=4, command=lambda: play_undo(game)
+    )
+    button_undo.place(x=18, y=BOARD_PX_SIZE + 90)
+    button_redo = ttk.Button(
+        game.root, text="redo", width=4, command=lambda: play_redo(game)
+    )
+    button_redo.place(x=90, y=BOARD_PX_SIZE + 90)
+    button_load = ttk.Button(
+        game.root, text="load", width=4, command=lambda: play_load(game)
+    )
+    button_load.place(x=162, y=BOARD_PX_SIZE + 90)
+    button_save = ttk.Button(
+        game.root, text="save", width=4, command=lambda: play_save(game)
+    )
+    button_save.place(x=234, y=BOARD_PX_SIZE + 90)
+
+    txt_kifu = tkinter.Entry(
+        width=42,
+        textvariable=game.tk_vars["kifu_var"]
+    )
+    txt_kifu.place(x=18, y=BOARD_PX_SIZE + 120)
+
 # 「対局開始」ボタンが押された時
 
 
@@ -98,6 +121,26 @@ def click_board(event, game):
     game.proc_machine_turn()
 
 
+def play_undo(game):
+    # TODO:
+    pass
+
+
+def play_redo(game):
+    # TODO:
+    pass
+
+
+def play_load(game):
+    # TODO:
+    pass
+
+
+def play_save(game):
+    # TODO:
+    pass
+
+
 # ------------------------
 # メイン処理
 # ------------------------
@@ -106,7 +149,8 @@ root.title("リバーシ 0.1")
 tk_vars = {
     "black_var": tkinter.IntVar(),
     "white_var": tkinter.IntVar(),
-    "mess_var": tkinter.StringVar()
+    "mess_var": tkinter.StringVar(),
+    "kifu_var": tkinter.StringVar()
 }
 # ウインドウサイズを指定
 root.geometry('{}x{}'.format(BOARD_PX_SIZE + 32, BOARD_PX_SIZE + 180))

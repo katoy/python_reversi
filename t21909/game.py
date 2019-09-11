@@ -10,6 +10,8 @@ from locale_str import LocaleStr
 
 
 class Game:
+    YOKO = "abcdefghijklmnopqrstuvwxyz"
+
     def __init__(self, canvas_board, root, tk_vers):
         self.game_mode = GameState.STAY
 
@@ -30,10 +32,14 @@ class Game:
         self.last_move = None
         self.game_mode = GameState.PLAYING
         self.board.init_board()  # 盤面の初期化
+        self.moves = [None for _ in range(DIM * DIM - 4)]
 
     # 局面を進める
     def game_move(self, position):
         if position:
+            self.moves[self.board.move_num] = [
+                self.board.turn.value, position.x,  position.y
+            ]
             reverse_stones = self.board.move(position)  # 局面を進める
             self.draw_board(position, reverse_stones)   # 盤面を描画
             self.last_move = position
@@ -45,7 +51,7 @@ class Game:
             return
 
         # パス判定
-        move_list = self.board.get_move_list()
+        move_list = self.board.get_moveable_list()
         if len(move_list) == 0:
             # 石を打てる場所がないのでパス
             self.board.move_pass()
@@ -114,6 +120,7 @@ class Game:
             )
 
         self.tk_vars["mess_var"].set(mess)  # メッセージラベルにセット
+        self.tk_vars["kifu_var"].set(self.kifu_str(self.moves))
 
     def draw_board(self, position, reverse_stones=[]):
         self.last_move = position
@@ -162,7 +169,7 @@ class Game:
         )
         move_list = []
         if self.game_mode == GameState.PLAYING and self.is_human_turn():
-            move_list = self.board.get_move_list()
+            move_list = self.board.get_moveable_list()
             self.board.set_mark(move_list, disp=True)
 
         for y in range(DIM):
@@ -224,3 +231,10 @@ class Game:
     def hide_last_stone(self):
         id = self.g_last_stone
         self.canvas_board.coords(id, 0, 0, 0, 0)
+
+    def kifu_str(self, moves):
+        kifu = ""
+        for v in moves:
+            if v:
+                kifu += self.YOKO[v[1]] + str(v[2] + 1)
+        return kifu
