@@ -26,7 +26,9 @@ class AI:
 
         eval_val = 0
         # 隅
-        eval_val += 16 * sum([board.board[y][x].value for x, y in self.CORNERS])
+        eval_val += 16 * sum(
+            [board.board[y][x].value for x, y in self.CORNERS]
+        )
 
         # 手番 打てるマスの数
         move_num = len(board.get_moveable_list()) * board.turn.value

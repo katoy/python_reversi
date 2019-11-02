@@ -26,7 +26,9 @@ class AI:
 
         eval_val = 0
         # 隅
-        eval_val += 16 * sum([board.board[y][x].value for x, y in self.CORNERS])
+        eval_val += 16 * sum(
+            [board.board[y][x].value for x, y in self.CORNERS]
+        )
 
         # 手番 打てるマスの数
         move_num = len(board.get_moveable_list()) * board.turn.value
@@ -65,7 +67,8 @@ class AI:
                 alpha = -1000000
                 beta = best_eval
 
-            eval = self.alphabeta(tmp_board, ai_level - 1, alpha, beta)  # 局面を評価
+            # 局面を評価
+            eval = self.alphabeta(tmp_board, ai_level - 1, alpha, beta)
             if board.turn == Stone.BLACK:
                 if eval > best_eval:
                     # 黒の手番 : 評価値がより高い手の場合は最善手を入れ替える
