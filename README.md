@@ -50,3 +50,6 @@ pycodestyle reversi.py で linte チェックをしています。
 
 - https://github.com/shionhonda/IaGo
   AlphaGoを模したオセロAIを作る
+
+- https://qiita.com/na-o-ys/items/10d894635c2a6c07ac70
+  オセロAI入門

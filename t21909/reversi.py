@@ -128,7 +128,7 @@ def click_board(event, game):
         messagebox.showinfo("", "対局開始してください")
         return
 
-    if game.is_human_turn():
+    if not game.get_turn().ai():
         x = math.floor(event.x / CELL_PX_SIZE)
         y = math.floor(event.y / CELL_PX_SIZE)
         if not game.board.is_movable_xy(x, y):

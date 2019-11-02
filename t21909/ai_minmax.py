@@ -1,31 +1,58 @@
 import time
 import random
 import copy
+from config import DIM
 from board import Board
 from stone import Stone
 
 # ------------------------
-# AI_Randum クラス
+# AI_MinMax クラス
 # ------------------------
 
 
 class AI:
-    AI_LEVEL = 4  # AIが読む深
+    AI_LEVEL = 3  # 4  # AIが読む深さ
+    CORNERS = [
+        (0, 0), (0, DIM - 1), (DIM - 1, 0), (DIM - 1, DIM - 1)
+    ]
+
+    # 局面評価
+    # 黒:プラス  白:マイナス
+    def evaluation(self, board):
+        # 終了局面であれば (黒石数 - 白石数) を返す
+        if board.is_game_end():
+            discs = board.get_discs()  # 黒白の石数をタプルで取得
+            return 1000 * (discs[Stone.BLACK] - discs[Stone.WHITE])
+
+        eval_val = 0
+        # 隅
+        eval_val += 16 * sum([board.board[y][x].value for x, y in self.CORNERS])
+
+        # 手番 打てるマスの数
+        move_num = len(board.get_moveable_list()) * board.turn.value
+
+        # 相手 打てるマスの数
+        board.move_pass()
+        move_num += len(board.get_moveable_list()) * board.turn.value
+        board.move_pass()
+
+        eval_val += move_num * 2
+        return eval_val
 
     # 与えられた盤面から指し手を返す
     def select_move(self, board):
+        best_position = None
         # すべての指し手を生成
         move_list = board.get_moveable_list()
         # 同じ手になりにくくするためシャッフルする
         random.shuffle(move_list)
 
-        ai_level = self.AI_LEVEL  # 読みの深さ
-
         if board.turn == Stone.BLACK:
-            best_eval = -10000  # 黒の手番:すごく低い評価値からスタート
+            best_eval = -1000000  # 黒の手番:すごく低い評価値からスタート
         else:
-            best_eval = 10000   # 白の手番:すごく高い評価値からスタート
+            best_eval = 1000000  # 白の手番:すごく高い評価値からスタート
 
+        ai_level = self.AI_LEVEL  # 読みの深さ
         for position in move_list:
             tmp_board = copy.deepcopy(board)
             tmp_board.move(position)  # 局面を進める
@@ -41,15 +68,13 @@ class AI:
                     best_eval = eval
                     best_position = position
 
-        print(
-            str(board.move_num) + "手 best_eval: " + str(best_eval)
-        )
+        print("{:02}手 best_eval: {}".format(board.move_num, best_eval))
         return best_position
 
     def minmax(self, board, depth):
         # 引数で指定された深さまで読んだか終局となった場合は、局面評価値を返す
         if depth <= 0 or board.is_game_end():
-            return board.evaluation()
+            return self.evaluation(board)
 
         # すべての指し手を生成
         move_list = board.get_moveable_list()
@@ -59,11 +84,7 @@ class AI:
             tmp_board.move_pass()
             return self.minmax(tmp_board, depth)
 
-        if board.turn == Stone.BLACK:
-            best_eval = -10000  # 黒の手番:すごく低い評価値からスタート
-        else:
-            best_eval = 10000   # 白の手番:すごく高い評価値からスタート
-
+        best_eval = -10000 * board.turn.value
         for position in move_list:
             tmp_board = copy.deepcopy(board)
             tmp_board.move(position)

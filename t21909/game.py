@@ -55,7 +55,7 @@ class Game:
         if len(move_list) == 0:
             # 石を打てる場所がないのでパス
             self.board.move_pass()
-            if self.is_human_turn():
+            if not self.get_turn().ai():
                 messagebox.showinfo("パス", "打てる場所がないのでパスします")
                 self.redraw()
 
@@ -67,14 +67,13 @@ class Game:
         if self.board.turn == Stone.WHITE:
             return self.white_player
 
-    # 次の手番は人間の画面クリックか？
-    def is_human_turn(self):
-        return self.get_turn() == Player.HUMAN
-
     # 次の手番がコンピュータなら AIに指し手を選択させる
     def proc_machine_turn(self):
-        while not self.is_human_turn():
-            ai = self.get_turn().get_ai()
+        while True:
+            ai = self.get_turn().ai()
+            if not ai:
+                break
+
             position = ai.select_move(self.board)
             self.game_move(position)  # 局面を進める
             if self.game_mode == GameState.END:
@@ -169,7 +168,7 @@ class Game:
             0, 0, BOARD_PX_SIZE, BOARD_PX_SIZE, fill="#00a000"
         )
         move_list = []
-        if self.game_mode == GameState.PLAYING and self.is_human_turn():
+        if self.game_mode == GameState.PLAYING and not self.get_turn().ai():
             move_list = self.board.get_moveable_list()
             self.board.set_marks(move_list, disp=True)
 

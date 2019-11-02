@@ -9,9 +9,6 @@ class Board:
         [dx, dy] for dx in [-1, 0, 1] for dy in [-1, 0, 1]
         if dx != 0 or dy != 0
     ]
-    CORNERS = [
-        (0, 0), (0, DIM - 1), (DIM - 1, 0), (DIM - 1, DIM - 1)
-    ]
 
     def __init__(self):
         self.board = [
@@ -157,46 +154,6 @@ class Board:
     # パスする
     def move_pass(self):
         self.turn = self.turn.invert()  # パス
-
-    # 局面評価
-    # 黒:プラス  白:マイナス
-    def evaluation(self):
-        eval_val = 0
-
-        # 終了局面であれば (黒石数 - 白石数) を返す
-        if self.is_game_end():
-            discs = self.get_discs()  # 黒白の石数をタプルで取得
-            eval_val = discs[Stone.BLACK] - discs[Stone.WHITE]
-            if eval_val > 0:
-                eval_val += 1000
-            elif eval_val < 0:
-                eval_val -= 1000
-            return eval_val
-
-        # 隅s
-        eval_val += 16 * sum(
-            [self.board[y][x].value for x, y in self.CORNERS]
-        )
-
-        # 手番 打てるマスの数
-        move_num = 0
-        move_list = self.get_moveable_list()
-        if self.turn == Stone.BLACK:
-            move_num += len(move_list)
-        else:
-            move_num -= len(move_list)
-
-        # 相手 打てるマスの数
-        self.move_pass()
-        move_list = self.get_moveable_list()
-        if self.turn == Stone.BLACK:
-            move_num += len(move_list)
-        else:
-            move_num -= len(move_list)
-        self.move_pass()
-
-        eval_val += move_num * 2
-        return eval_val
 
     # 対局終了の判定
     def is_game_end(self):
