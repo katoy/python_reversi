@@ -28,35 +28,56 @@ def init_board(game):
     # 対局条件
     black_label = ttk.Label(text=LocaleStr.names("Play_First"))
     black_label.place(x=16, y=4)
-    black_rdo0 = ttk.Radiobutton(
+    black_radio0 = ttk.Radiobutton(
         game.root, text=LocaleStr.names(Player.HUMAN),
         value=Player.HUMAN.value, variable=game.tk_vars["black_var"]
     )
-    black_rdo0.place(x=70, y=4)
-    black_rdo1 = ttk.Radiobutton(
+    black_radio0.place(x=70, y=4)
+    black_radio1 = ttk.Radiobutton(
         game.root, text=LocaleStr.names(Player.AI_RANDUM),
         value=Player.AI_RANDUM.value, variable=game.tk_vars["black_var"]
     )
-    black_rdo1.place(x=120, y=4)
+    black_radio1.place(x=120, y=4)
+    black_radio1 = ttk.Radiobutton(
+        game.root, text=LocaleStr.names(Player.AI_MINMAX),
+        value=Player.AI_MINMAX.value, variable=game.tk_vars["black_var"]
+    )
+    black_radio1.place(x=240, y=4)
+    black_radio1 = ttk.Radiobutton(
+        game.root, text=LocaleStr.names(Player.AI_ALPHABETA),
+        value=Player.AI_ALPHABETA.value, variable=game.tk_vars["black_var"]
+    )
+    black_radio1.place(x=320, y=4)
 
     white_label = ttk.Label(text=LocaleStr.names("Play_Second"))
     white_label.place(x=16, y=24)
-    white_rdo0 = ttk.Radiobutton(
+    white_radio0 = ttk.Radiobutton(
         game.root, text=LocaleStr.names(Player.HUMAN),
         value=Player.HUMAN.value, variable=game.tk_vars["white_var"]
     )
-    white_rdo0.place(x=70, y=24)
-    white_rdo1 = ttk.Radiobutton(
+    white_radio0.place(x=70, y=24)
+    white_radio1 = ttk.Radiobutton(
         game.root, text=LocaleStr.names(Player.AI_RANDUM),
         value=Player.AI_RANDUM.value, variable=game.tk_vars["white_var"]
     )
-    white_rdo1.place(x=120, y=24)
+    white_radio1.place(x=120, y=24)
+    white_radio1 = ttk.Radiobutton(
+        game.root, text=LocaleStr.names(Player.AI_MINMAX),
+        value=Player.AI_MINMAX.value, variable=game.tk_vars["white_var"]
+    )
+    white_radio1.place(x=240, y=24)
+    white_radio1 = ttk.Radiobutton(
+        game.root, text=LocaleStr.names(Player.AI_ALPHABETA),
+        value=Player.AI_ALPHABETA.value, variable=game.tk_vars["white_var"]
+    )
+    white_radio1.place(x=320, y=24)
 
     # 「対局開始」ボタンを設置
     button_start = ttk.Button(
-        game.root, text="対局開始", width=6, command=lambda: play_start(game)
+        game.root, text=LocaleStr.names("Label_start_game"),
+        width=6, command=lambda: play_start(game)
     )
-    button_start.place(x=300, y=12)
+    button_start.place(x=300, y=48)
 
     mess_label = ttk.Label(game.root, textvariable=game.tk_vars["mess_var"])
     mess_label.place(x=16, y=48)

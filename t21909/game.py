@@ -73,8 +73,8 @@ class Game:
 
     # 次の手番がコンピュータなら AIに指し手を選択させる
     def proc_machine_turn(self):
-        ai = self.get_turn().get_ai()
         while not self.is_human_turn():
+            ai = self.get_turn().get_ai()
             position = ai.select_move(self.board)
             self.game_move(position)  # 局面を進める
             if self.game_mode == GameState.END:
@@ -115,7 +115,8 @@ class Game:
                 LocaleStr.names(self.board.turn)
             )
         elif self.game_mode == GameState.END:
-            mess = "対局終了 {}手 {} {}".format(
+            mess = "{} {}手 {} {}".format(
+                LocaleStr.names("Label_end_game"),
                 self.board.move_num, self.score_str(), self.result_str()
             )
 
@@ -170,7 +171,7 @@ class Game:
         move_list = []
         if self.game_mode == GameState.PLAYING and self.is_human_turn():
             move_list = self.board.get_moveable_list()
-            self.board.set_mark(move_list, disp=True)
+            self.board.set_marks(move_list, disp=True)
 
         for y in range(DIM):
             for x in range(DIM):
@@ -194,7 +195,7 @@ class Game:
                         fill=self.board.turn.color(), stone_size=0.2
                     )
 
-        self.board.set_mark(move_list, disp=False)
+        self.board.set_marks(move_list, disp=False)
         self.draw_last_stone()
 
         # 枠を描画
