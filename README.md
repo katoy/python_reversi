@@ -53,3 +53,6 @@ pycodestyle reversi.py で linte チェックをしています。
 
 - https://qiita.com/na-o-ys/items/10d894635c2a6c07ac70
   オセロAI入門
+
+- https://sakasin.net/blog/solving-othello
+  オセロの完全解析を解説する

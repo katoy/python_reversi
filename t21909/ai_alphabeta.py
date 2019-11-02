@@ -11,7 +11,8 @@ from stone import Stone
 
 
 class AI:
-    AI_LEVEL = 4  # AIが読む深さ
+    AI_LEVEL = 4     # AIが読む深さ
+    AI_PERFECT = 12  # 12  # 完全読みをする手数
     CORNERS = [
         (0, 0), (0, DIM - 1), (DIM - 1, 0), (DIM - 1, DIM - 1)
     ]
@@ -55,7 +56,7 @@ class AI:
             best_eval = 1000000  # 白の手番:すごく高い評価値からスタート
 
         ai_level = self.AI_LEVEL  # 読みの深さ
-        if board.move_num >= DIM * DIM - 4 - 11:
+        if board.move_num >= DIM * DIM - 4 - self.AI_PERFECT:
             ai_level = DIM * DIM - 4 - board.move_num + 1
         for position in move_list:
             tmp_board = copy.deepcopy(board)
